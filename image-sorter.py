@@ -6,12 +6,16 @@ path_with_exif_images = "example-images/camera"
 
 def get_date(image: Image):
     if image.has_exif:
-        return str(image.datetime).split(" ")[0].split(":")
+        date = str(image.datetime).split(" ")[0].split(":")
+        date.pop()
+        return date
+    else:
+        return "noExif"
 
 
 def get_dates(path: str):
     image_dates = []
-    for image in get_images("example-images/camera"):
+    for image in get_images(path):
         with open(image, 'rb') as image_file:
             my_image = Image(image_file)
         image_dates.append(get_date(my_image))
@@ -20,9 +24,16 @@ def get_dates(path: str):
 
 def get_images(path: str):
     images = []
-    for image in os.listdir(path):
-        if image.endswith(".jpg"):
-            images.append(os.path.join(path, image))
+    for file in os.listdir(path):
+        full_path = os.path.join(path, file)
+        if os.path.isdir(full_path):
+            sub_images = get_images(full_path)
+
+            for i in sub_images:
+                images.append(i)
+        elif file.endswith(".jpg"):
+            images.append(os.path.join(path, file))
+
     return images
 
 
@@ -44,19 +55,23 @@ def analyze_directory(path: str):
     return [files_count, exif_files, non_exif_files]
     # return "total: " + str(files_count) + ", exif: " + str(exif_files) + ", no exif: " + str(non_exif_files)
 
-# kann nicht richtig funktionieren für den Fall "2018, August; 2019, August"
-# def get_years_and_months(path: str):
-#     years_and_months = {"years": [], "months": []}
-#     for date in get_dates(path):
-#         if not date[0] in years_and_months["years"]:
-#             years_and_months["years"].append(date[0])
-#         if not date[1] in years_and_months["months"]:
-#             years_and_months["months"].append(date[1])
-#     return years_and_months
+
+def create_destination_directories(source_path: str, destination_path: str):
+    for date in get_dates(source_path):
+        if date == "noExif":
+            path = os.path.join(destination_path, "noExif")
+        else:
+            year = date[0]
+            month = date[1]
+            path = os.path.join(destination_path, year, month)
+        if not os.path.isdir(path):
+            try:
+                os.makedirs(path)
+            except OSError:
+                print("Beim Erstellen vom Ordner %s ging etwas schief", path)
+            else:
+                print("Ordner %s erstellt", path)
 
 
-# print(get_years_and_months(path_with_exif_images))
-
-os.mkdir("target-directory")
-
-# for date in get_dates(path_with_exif_images):
+create_destination_directories(
+    "example-images", os.path.join(os.getcwd(), "target"))
