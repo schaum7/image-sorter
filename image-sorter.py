@@ -1,7 +1,9 @@
 # initial
 from exif import Image
+from shutil import copyfile
 import os
 path_with_exif_images = "example-images/camera"
+path_all_images = "example-images"
 
 
 def get_date(image: Image):
@@ -56,22 +58,39 @@ def analyze_directory(path: str):
     # return "total: " + str(files_count) + ", exif: " + str(exif_files) + ", no exif: " + str(non_exif_files)
 
 
-def create_destination_directories(source_path: str, destination_path: str):
-    for date in get_dates(source_path):
-        if date == "noExif":
-            path = os.path.join(destination_path, "noExif")
+def create_destination_directory(destination_path: str, date: str):
+    if date == "noExif":
+        path = os.path.join(destination_path, "noExif")
+    else:
+        year = date[0]
+        month = date[1]
+        path = os.path.join(destination_path, year, month)
+
+    if not os.path.isdir(path):
+        try:
+            os.makedirs(path)
+        except OSError:
+            print("Beim Erstellen vom Ordner %s ging etwas schief", path)
         else:
-            year = date[0]
-            month = date[1]
-            path = os.path.join(destination_path, year, month)
-        if not os.path.isdir(path):
-            try:
-                os.makedirs(path)
-            except OSError:
-                print("Beim Erstellen vom Ordner %s ging etwas schief", path)
-            else:
-                print("Ordner %s erstellt", path)
+            print("Ordner %s erstellt", path)
+
+    return path
 
 
-create_destination_directories(
-    "example-images", os.path.join(os.getcwd(), "target"))
+# create_destination_directories(
+#     "example-images", os.path.join(os.getcwd(), "target"))
+def sort_images(source_path: str, destination_path: str):
+
+    for i in get_images(source_path):
+        print(i.split("\\")[-1])
+        with open(i, 'rb') as image_file:
+            my_image = Image(image_file)
+        target_path = create_destination_directory(
+            destination_path, get_date(my_image))
+        copyfile(i, os.path.join(target_path, i.split("\\")[-1]))
+
+
+gs8 = "C:\\Users\\falka\\Bilder\\Galaxy S8"
+desti_path = os.path.join(os.getcwd(), "target")
+
+sort_images(gs8, desti_path)
