@@ -2,8 +2,8 @@
 from exif import Image
 from shutil import copyfile
 import os
-path_with_exif_images = "example-images/camera"
-path_all_images = "example-images"
+# path_with_exif_images = "example-images/camera"
+# path_all_images = "example-images"
 
 
 def get_date(image: Image):
@@ -17,19 +17,19 @@ def get_date(image: Image):
 
 def get_dates(path: str):
     image_dates = []
-    for image in get_images(path):
+    for image in get_images_paths(path):
         with open(image, 'rb') as image_file:
             my_image = Image(image_file)
         image_dates.append(get_date(my_image))
     return image_dates
 
 
-def get_images(path: str):
+def get_images_paths(path: str):
     images = []
     for file in os.listdir(path):
         full_path = os.path.join(path, file)
         if os.path.isdir(full_path):
-            sub_images = get_images(full_path)
+            sub_images = get_images_paths(full_path)
 
             for i in sub_images:
                 images.append(i)
@@ -42,7 +42,7 @@ def get_images(path: str):
 def analyze_directory(path: str):
     exif_files = 0
     non_exif_files = 0
-    images = get_images(path)
+    images = get_images_paths(path)
     files_count = len(images)
 
     for file in images:
@@ -70,27 +70,30 @@ def create_destination_directory(destination_path: str, date: str):
         try:
             os.makedirs(path)
         except OSError:
-            print("Beim Erstellen vom Ordner %s ging etwas schief", path)
+            raise OSError(
+                "Beim Erstellen vom Ordner {0} ging etwas schief".format(path))
         else:
-            print("Ordner %s erstellt", path)
+            print("Ordner {0} erstellt".format(path))
 
     return path
 
 
-# create_destination_directories(
-#     "example-images", os.path.join(os.getcwd(), "target"))
 def sort_images(source_path: str, destination_path: str):
+    """ Copies and sorts image from source path into destination path. 
+    It also creates a directory structure depending on the year and month the image was taken.
+    It sorts the images into that structure.
 
-    for i in get_images(source_path):
-        print(i.split("\\")[-1])
-        with open(i, 'rb') as image_file:
+    Arguments:
+        source_path {str} -- directory the images are at currently
+        destination_path {str} -- directory you want the images to be sorted at
+    """
+
+    for image_path in get_images_paths(source_path):
+        with open(image_path, 'rb') as image_file:
             my_image = Image(image_file)
+
         target_path = create_destination_directory(
             destination_path, get_date(my_image))
-        copyfile(i, os.path.join(target_path, i.split("\\")[-1]))
 
-
-gs8 = "C:\\Users\\falka\\Bilder\\Galaxy S8"
-desti_path = os.path.join(os.getcwd(), "target")
-
-sort_images(gs8, desti_path)
+        copyfile(image_path, os.path.join(
+            target_path, image_path.split("\\")[-1]))
