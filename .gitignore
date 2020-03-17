@@ -1,2 +1,5 @@
 example-images/
 target/
+.vscode
+venv
+__pycache__
